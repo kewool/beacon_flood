@@ -75,6 +75,7 @@ typedef struct {
 typedef struct {
   char *interface;
   wchar_t *ssid;
+  int crypt;
 } args;
 
 char* str(int size) {
@@ -175,7 +176,8 @@ void sendBeacon(args* argv) {
   beacon->fr.frag_seq = 0x0000;
   beacon->fi.timestamp = 0x00000000000000;
   beacon->fi.interval = 0x0000;
-  beacon->fi.capabilities = 0x0000;
+  beacon->fi.capabilities = 0x0001;
+  if (argv->crypt == 1) beacon->fi.capabilities |= 0x0010;
   beacon->s.t.id = 0x00;
   beacon->s.t.length = strlen(argv->ssid);
   beacon->s.ssid = (uint8_t*)malloc(sizeof(uint8_t) * strlen(argv->ssid));
@@ -246,6 +248,8 @@ int main(int argc, wchar_t* argv[]) {
     argvs[i] = (args*)malloc(sizeof(args));
     argvs[i]->ssid = ssid_list[i];
     argvs[i]->interface = argv[1];
+    if (argc == 4 && !strcmp(argv[3], "--crypt")) argvs[i]->crypt = 1;
+    else argvs[i]->crypt = 0;
   }
 
 
