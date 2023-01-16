@@ -18,13 +18,13 @@ typedef struct {
     uint8_t pad;
     uint16_t length;
     uint32_t present;
-    // uint8_t flags;
-    // uint8_t rate;
-    // uint16_t channel_freq;
-    // uint16_t channel_flags;
-    // uint8_t antenna_signal;
-    // uint8_t antenna;
-    // uint8_t rx_flags;
+    uint8_t flags;
+    uint8_t rate;
+    uint16_t channel_freq;
+    uint16_t channel_flags;
+    uint8_t antenna_signal;
+    uint8_t antenna;
+    uint8_t rx_flags;
 } radiotap;
 
 typedef struct {
@@ -64,12 +64,24 @@ typedef struct {
 } channel;
 
 typedef struct {
+  tag t;
+  uint8_t rsn_version[2];
+  uint8_t group_cipher_suite[4];
+  uint8_t pairwise_cipher_suite_count[2];
+  uint8_t pairwise_cipher_suite_list[8];
+  uint8_t akm_suite_count[2];
+  uint8_t akm_suite_list[4];
+  uint8_t rsn_capabilities[2];
+} rsn_info;
+
+typedef struct {
   radiotap r;
   frame fr;
   fixed fi;
   ssid s;
   suported_rates sr;
   channel c;
+  rsn_info rsn;
 } _80211;
 
 typedef struct {
@@ -150,17 +162,17 @@ void sendBeacon(args* argv) {
   _80211* beacon = (_80211*)malloc(sizeof(_80211));
   beacon->r.version = 0;
   beacon->r.pad = 0;
-  beacon->r.length = 8;
-  // beacon->r.length = 18;
-  beacon->r.present = 0x00000000;
-  // beacon->r.present = 0x0000482e;
-  // beacon->r.flags = 0x10;
-  // beacon->r.rate = 0x82;
-  // beacon->r.channel_freq = 0x096c;
-  // beacon->r.channel_flags = 0x00a0;
-  // beacon->r.antenna_signal = 0xbc;
-  // beacon->r.antenna = 0x00;
-  // beacon->r.rx_flags = 0x0000;
+  // beacon->r.length = 8;
+  beacon->r.length = 18;
+  // beacon->r.present = 0x00000000;
+  beacon->r.present = 0x0000482e;
+  beacon->r.flags = 0x00;
+  beacon->r.rate = 0x82;
+  beacon->r.channel_freq = 0x096c;
+  beacon->r.channel_flags = 0x00a0;
+  beacon->r.antenna_signal = 0xff;
+  beacon->r.antenna = 0x00;
+  beacon->r.rx_flags = 0x0000;
   beacon->fr.type = 0x80;
   beacon->fr.flags = 0x00;
   beacon->fr.duration = 0x0000;
@@ -174,9 +186,9 @@ void sendBeacon(args* argv) {
   }
   printf("\n");
   beacon->fr.frag_seq = 0x0000;
-  beacon->fi.timestamp = 0x00000000000000;
-  beacon->fi.interval = 0x0000;
-  beacon->fi.capabilities = 0x0001;
+  beacon->fi.timestamp = 0x00000a00ab7e8183;
+  beacon->fi.interval = 0x0064;
+  beacon->fi.capabilities = 0x0401;
   if (argv->crypt == 1) beacon->fi.capabilities |= 0x0010;
   beacon->s.t.id = 0x00;
   beacon->s.t.length = strlen(argv->ssid);
@@ -195,8 +207,35 @@ void sendBeacon(args* argv) {
   beacon->c.t.id = 0x03;
   beacon->c.t.length = 1;
   beacon->c.current = 0x01;
+  beacon->rsn.t.id = 0x30;
+  beacon->rsn.t.length = 24;
+  beacon->rsn.rsn_version[0] = 0x01;
+  beacon->rsn.rsn_version[1] = 0x00;
+  beacon->rsn.group_cipher_suite[0] = 0x00;
+  beacon->rsn.group_cipher_suite[1] = 0x0f;
+  beacon->rsn.group_cipher_suite[2] = 0xac;
+  beacon->rsn.group_cipher_suite[3] = 0x02;
+  beacon->rsn.pairwise_cipher_suite_count[0] = 0x02;
+  beacon->rsn.pairwise_cipher_suite_count[1] = 0x00;
+  beacon->rsn.pairwise_cipher_suite_list[0] = 0x00;
+  beacon->rsn.pairwise_cipher_suite_list[1] = 0x0f;
+  beacon->rsn.pairwise_cipher_suite_list[2] = 0xac;
+  beacon->rsn.pairwise_cipher_suite_list[3] = 0x04;
+  beacon->rsn.pairwise_cipher_suite_list[4] = 0x00;
+  beacon->rsn.pairwise_cipher_suite_list[5] = 0x0f;
+  beacon->rsn.pairwise_cipher_suite_list[6] = 0xac;
+  beacon->rsn.pairwise_cipher_suite_list[7] = 0x02;
+  beacon->rsn.akm_suite_count[0] = 0x01;
+  beacon->rsn.akm_suite_count[1] = 0x00;
+  beacon->rsn.akm_suite_list[0] = 0x00;
+  beacon->rsn.akm_suite_list[1] = 0x0f;
+  beacon->rsn.akm_suite_list[2] = 0xac;
+  beacon->rsn.akm_suite_list[3] = 0x02;
+  beacon->rsn.rsn_capabilities[0] = 0x0c;
+  beacon->rsn.rsn_capabilities[1] = 0x00;
 
   int size = beacon->r.length + 24 + 12 + 2 + strlen(argv->ssid) + beacon->sr.t.length + 2 + (beacon->c.t.length + 2);
+  if (argv->crypt == 1) size += beacon->rsn.t.length + 2;
   int ssid_padding = beacon->r.length + 24 + 12 + 2;
   uint8_t* packet = (uint8_t*)malloc(sizeof(uint8_t) * size);
   memcpy(packet, &beacon->r, beacon->r.length);
@@ -206,6 +245,7 @@ void sendBeacon(args* argv) {
   memcpy(packet + ssid_padding, beacon->s.ssid, strlen(argv->ssid));
   memcpy(packet + ssid_padding + strlen(argv->ssid), &beacon->sr, beacon->sr.t.length + 2);
   memcpy(packet + ssid_padding + strlen(argv->ssid) + beacon->sr.t.length + 2, &beacon->c, sizeof(channel));
+  if (argv->crypt == 1) memcpy(packet + ssid_padding + strlen(argv->ssid) + beacon->sr.t.length + 2 + sizeof(channel), &beacon->rsn, beacon->rsn.t.length + 2);
   free(beacon->s.ssid);
   free(beacon);
   // 구조체 왜 썼지..
