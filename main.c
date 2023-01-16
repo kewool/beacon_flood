@@ -177,10 +177,10 @@ void sendBeacon(args* argv) {
     beacon->fr.bssid[i] = r;
   }
   printf("\n");
-  beacon->fr.frag_seq = 0x6270;
-  beacon->fi.timestamp = 0x00000025ccc52159;
-  beacon->fi.interval = 0x0064;
-  beacon->fi.capabilities = 0x1102;
+  beacon->fr.frag_seq = 0x0000;
+  beacon->fi.timestamp = 0x00000000000000;
+  beacon->fi.interval = 0x0000;
+  beacon->fi.capabilities = 0x0000;
   beacon->s.t.id = 0x00;
   beacon->s.t.length = strlen(argv->ssid);
   beacon->s.ssid = (uint8_t*)malloc(sizeof(uint8_t) * strlen(argv->ssid));
