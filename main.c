@@ -65,13 +65,13 @@ typedef struct {
 
 typedef struct {
   tag t;
-  uint8_t rsn_version[2];
-  uint8_t group_cipher_suite[4];
-  uint8_t pairwise_cipher_suite_count[2];
-  uint8_t pairwise_cipher_suite_list[8];
-  uint8_t akm_suite_count[2];
-  uint8_t akm_suite_list[4];
-  uint8_t rsn_capabilities[2];
+  uint16_t rsn_version;
+  uint16_t group_cipher_suite[2];
+  uint16_t pairwise_cipher_suite_count;
+  uint16_t pairwise_cipher_suite_list[4];
+  uint16_t akm_suite_count;
+  uint16_t akm_suite_list[4];
+  uint16_t rsn_capabilities;
 } rsn_info;
 
 typedef struct {
@@ -209,30 +209,18 @@ void sendBeacon(args* argv) {
   beacon->c.current = 0x01;
   beacon->rsn.t.id = 0x30;
   beacon->rsn.t.length = 24;
-  beacon->rsn.rsn_version[0] = 0x01;
-  beacon->rsn.rsn_version[1] = 0x00;
-  beacon->rsn.group_cipher_suite[0] = 0x00;
-  beacon->rsn.group_cipher_suite[1] = 0x0f;
-  beacon->rsn.group_cipher_suite[2] = 0xac;
-  beacon->rsn.group_cipher_suite[3] = 0x02;
-  beacon->rsn.pairwise_cipher_suite_count[0] = 0x02;
-  beacon->rsn.pairwise_cipher_suite_count[1] = 0x00;
-  beacon->rsn.pairwise_cipher_suite_list[0] = 0x00;
-  beacon->rsn.pairwise_cipher_suite_list[1] = 0x0f;
-  beacon->rsn.pairwise_cipher_suite_list[2] = 0xac;
-  beacon->rsn.pairwise_cipher_suite_list[3] = 0x04;
-  beacon->rsn.pairwise_cipher_suite_list[4] = 0x00;
-  beacon->rsn.pairwise_cipher_suite_list[5] = 0x0f;
-  beacon->rsn.pairwise_cipher_suite_list[6] = 0xac;
-  beacon->rsn.pairwise_cipher_suite_list[7] = 0x02;
-  beacon->rsn.akm_suite_count[0] = 0x01;
-  beacon->rsn.akm_suite_count[1] = 0x00;
-  beacon->rsn.akm_suite_list[0] = 0x00;
-  beacon->rsn.akm_suite_list[1] = 0x0f;
-  beacon->rsn.akm_suite_list[2] = 0xac;
-  beacon->rsn.akm_suite_list[3] = 0x02;
-  beacon->rsn.rsn_capabilities[0] = 0x0c;
-  beacon->rsn.rsn_capabilities[1] = 0x00;
+  beacon->rsn.rsn_version = 0x0001;
+  beacon->rsn.group_cipher_suite[0] = 0x0f00;
+  beacon->rsn.group_cipher_suite[1] = 0x02ac;
+  beacon->rsn.pairwise_cipher_suite_count = 0x0002;
+  beacon->rsn.pairwise_cipher_suite_list[0] = 0x0f00;
+  beacon->rsn.pairwise_cipher_suite_list[1] = 0x04ac;
+  beacon->rsn.pairwise_cipher_suite_list[2] = 0x0f00;
+  beacon->rsn.pairwise_cipher_suite_list[3] = 0x02ac;
+  beacon->rsn.akm_suite_count = 0x0001;
+  beacon->rsn.akm_suite_list[0] = 0x0f00;
+  beacon->rsn.akm_suite_list[1] = 0x02ac;
+  beacon->rsn.rsn_capabilities = 0x000c;
 
   int size = beacon->r.length + 24 + 12 + 2 + strlen(argv->ssid) + beacon->sr.t.length + 2 + (beacon->c.t.length + 2);
   if (argv->crypt == 1) size += beacon->rsn.t.length + 2;
