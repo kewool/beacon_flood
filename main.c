@@ -64,17 +64,12 @@ typedef struct {
 } channel;
 
 typedef struct {
-  uint32_t fs;
-} freme_sequence;
-
-typedef struct {
   radiotap r;
   frame fr;
   fixed fi;
   ssid s;
   suported_rates sr;
   channel c;
-  freme_sequence fcs;
 } _80211;
 
 typedef struct {
@@ -198,7 +193,6 @@ void sendBeacon(args* argv) {
   beacon->c.t.id = 0x03;
   beacon->c.t.length = 1;
   beacon->c.current = 0x01;
-  beacon->fcs.fs = 0x00000000;
 
   int size = beacon->r.length + 24 + 12 + 2 + strlen(argv->ssid) + beacon->sr.t.length + 2 + (beacon->c.t.length + 2);
   int ssid_padding = beacon->r.length + 24 + 12 + 2;
@@ -210,7 +204,6 @@ void sendBeacon(args* argv) {
   memcpy(packet + ssid_padding, beacon->s.ssid, strlen(argv->ssid));
   memcpy(packet + ssid_padding + strlen(argv->ssid), &beacon->sr, beacon->sr.t.length + 2);
   memcpy(packet + ssid_padding + strlen(argv->ssid) + beacon->sr.t.length + 2, &beacon->c, sizeof(channel));
-  memcpy(packet + ssid_padding + strlen(argv->ssid) + beacon->sr.t.length + 2 + 3, &beacon->fcs, 4);
   free(beacon->s.ssid);
   free(beacon);
   // 구조체 왜 썼지..
